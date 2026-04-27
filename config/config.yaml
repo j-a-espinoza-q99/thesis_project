@@ -1,0 +1,172 @@
+# =============================================================================
+# Master Configuration for Thesis Project
+# =============================================================================
+
+project:
+  name: "thesis_benchmark"
+  seed: 42
+  device: "cuda"
+  fp16: true
+
+# ---------------------------------------------------------------------------
+# Data Configuration
+# ---------------------------------------------------------------------------
+data:
+  dataset_name: "McAuley-Lab/Amazon-Reviews-2023"
+  domains:
+    - "All_Beauty"
+    - "Video_Games"
+    - "Office_Products"
+  timestamp_split:
+    train: "2022-01-01"
+    val: "2022-07-01"
+    test: "2023-01-01"
+  max_seq_length: 50
+  min_interactions: 5
+  filter_core: null  # No core filtering for realistic evaluation
+  num_workers: 8
+
+# ---------------------------------------------------------------------------
+# BLAIR Model Configuration
+# ---------------------------------------------------------------------------
+blair:
+  base:
+    model_name: "hyp1231/blair-roberta-base"
+    embedding_dim: 768
+    max_seq_length: 64
+    pooler_type: "cls"
+    temperature: 0.05
+  large:
+    model_name: "hyp1231/blair-roberta-large"
+    embedding_dim: 1024
+    max_seq_length: 64
+    pooler_type: "cls"
+    temperature: 0.05
+
+# ---------------------------------------------------------------------------
+# DeepSeek Model Configuration
+# ---------------------------------------------------------------------------
+deepseek:
+  api_base_url: "https://api.deepseek.com"
+  embedding_model: "deepseek-chat"  # DeepSeek uses chat model for embeddings via API
+  chat_model: "deepseek-v4-pro"
+  max_tokens: 4096
+  embedding_dim: 4096
+
+# ---------------------------------------------------------------------------
+# Claude / Voyage AI Configuration
+# ---------------------------------------------------------------------------
+claude:
+  voyage_model: "voyage-3"
+  embedding_dim: 1024
+  claude_model: "claude-sonnet-4-20250514"
+  max_tokens: 4096
+
+# ---------------------------------------------------------------------------
+# Custom Model Configuration
+# ---------------------------------------------------------------------------
+custom:
+  backbone: "hyp1231/blair-roberta-base"  # Initialize from BLAIR
+  embedding_dim: 768
+  adapter_type: "moe"  # Mixture-of-Experts adapter
+  num_experts: 8
+  lora_rank: 8
+  lora_alpha: 16
+  use_pca: true
+  pca_dim: 256
+
+# ---------------------------------------------------------------------------
+# Loss Function Configuration (Custom Model)
+# ---------------------------------------------------------------------------
+loss:
+  # Bayesian Personalized Ranking
+  bpr_weight: 1.0
+
+  # Adversarial Fairness
+  adv_weight: 0.1
+  adv_hidden_dim: 128
+  protected_attribute: null  # Set based on dataset
+
+  # Diversity Regularization (DPP)
+  div_weight: 0.05
+  div_topk: 10
+
+  # Popularity Debiasing (IPS)
+  pop_weight: 0.1
+
+  # Augmented Description Consistency (InfoNCE)
+  aug_weight: 0.2
+  aug_temperature: 0.07
+
+# ---------------------------------------------------------------------------
+# Prompt Configuration
+# ---------------------------------------------------------------------------
+prompts:
+  prompt_a_temperature: 0.7
+  prompt_b_temperature: 0.3
+  augmentation_batch_size: 32
+  max_augmented_chars: 500
+
+# ---------------------------------------------------------------------------
+# Training Configuration
+# ---------------------------------------------------------------------------
+training:
+  # BLAIR fine-tuning
+  blair_epochs: 100
+  blair_batch_size: 256
+  blair_learning_rate: 1.0e-4
+  blair_weight_decay: 0.01
+
+  # Custom model training
+  custom_epochs: 100
+  custom_batch_size: 256
+  custom_learning_rate: 5.0e-4
+  custom_weight_decay: 0.01
+
+  # General
+  eval_steps: 1000
+  save_steps: 5000
+  early_stopping_patience: 5
+  gradient_accumulation_steps: 2
+
+# ---------------------------------------------------------------------------
+# Evaluation Configuration
+# ---------------------------------------------------------------------------
+evaluation:
+  topk_values: [5, 10, 50, 100]
+
+  # Sequential Recommendation
+  seq_rec_metrics:
+    - "Recall"
+    - "NDCG"
+    - "MRR"
+
+  # Product Search
+  product_search_metrics:
+    - "NDCG@100"
+    - "Recall@100"
+    - "MRR@100"
+
+  # Complex Product Search (Amazon-C4)
+  complex_search_metrics:
+    - "NDCG@100"
+    - "Recall@100"
+    - "MRR@100"
+
+  # Fairness Metrics
+  fairness_metrics:
+    - "demographic_parity"
+    - "equal_opportunity"
+    - "disparate_impact"
+
+  # Diversity Metrics
+  diversity_metrics:
+    - "intra_list_diversity"
+    - "coverage"
+    - "entropy"
+
+  # Popularity Bias Metrics
+  popularity_metrics:
+    - "avg_popularity"
+    - "popularity_lift"
+    - "gini_coefficient"
